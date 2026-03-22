@@ -1,27 +1,23 @@
-// Claude API를 통해 동화 구조를 생성하는 Netlify Function
+// Gemini API를 통해 동화 구조를 생성하는 Netlify Function
 import type { Handler } from "@netlify/functions";
-import Anthropic from "@anthropic-ai/sdk";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 
-// 요청 본문 타입
 interface RequestBody {
   story: string;
-  anthropicKey: string;
+  geminiKey: string;
 }
 
-// 동화 페이지 타입
 interface StoryPage {
   pageNumber: number;
   text: string;
   imagePrompt: string;
 }
 
-// 동화 선택지 타입
 interface StoryChoice {
   id: string;
   text: string;
 }
 
-// 동화 응답 타입
 interface StoryResponse {
   title: string;
   pages: StoryPage[];
@@ -29,7 +25,6 @@ interface StoryResponse {
 }
 
 export const handler: Handler = async (event) => {
-  // CORS 헤더 설정
   const headers = {
     "Access-Control-Allow-Origin": "*",
     "Access-Control-Allow-Headers": "Content-Type",
@@ -37,7 +32,6 @@ export const handler: Handler = async (event) => {
     "Content-Type": "application/json",
   };
 
-  // OPTIONS 요청 처리 (CORS preflight)
   if (event.httpMethod === "OPTIONS") {
     return { statusCode: 204, headers, body: "" };
   }
@@ -61,13 +55,13 @@ export const handler: Handler = async (event) => {
     };
   }
 
-  const { story, anthropicKey } = body;
+  const { story, geminiKey } = body;
 
-  if (!story || !anthropicKey) {
+  if (!story || !geminiKey) {
     return {
       statusCode: 400,
       headers,
-      body: JSON.stringify({ error: "story와 anthropicKey가 필요합니다" }),
+      body: JSON.stringify({ error: "story와 geminiKey가 필요합니다" }),
     };
   }
 
@@ -79,13 +73,13 @@ export const handler: Handler = async (event) => {
     };
   }
 
-  try {
-    const client = new Anthropic({ apiKey: anthropicKey });
+  const genAI = new GoogleGenerativeAI(geminiKey);
+  const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
 
-    const systemPrompt = `당신은 놀이치료 전문가와 함께하는 동화 작가입니다. 아이의 상상을 따뜻하고 긍정적인 이야기로 만들어주세요.
-반드시 다음 JSON 형식으로만 응답하세요. 다른 텍스트는 포함하지 마세요.`;
+  const prompt = `당신은 놀이치료 전문가와 함께하는 동화 작가입니다. 아이의 상상을 따뜻하고 긍정적인 이야기로 만들어주세요.
+반드시 다음 JSON 형식으로만 응답하세요. 다른 텍스트는 포함하지 마세요.
 
-    const userPrompt = `아이가 말한 이야기: "${story}"
+아이가 말한 이야기: "${story}"
 
 위 이야기를 바탕으로 4~6페이지 분량의 동화책 내용을 JSON으로 만들어주세요.
 각 페이지의 imagePrompt는 반드시 영어로 작성하고 "watercolor children's book illustration style"을 포함해야 합니다.
@@ -107,57 +101,27 @@ export const handler: Handler = async (event) => {
   ]
 }`;
 
-    const message = await client.messages.create({
-      model: "claude-sonnet-4-20250514",
-      max_tokens: 2048,
-      system: systemPrompt,
-      messages: [{ role: "user", content: userPrompt }],
-    });
+  const result = await model.generateContent(prompt);
+  const responseText = result.response.text();
 
-    // 응답 텍스트 추출
-    const responseText =
-      message.content[0].type === "text" ? message.content[0].text : "";
+  const cleanedText = responseText
+    .replace(/```json\n?/g, "")
+    .replace(/```\n?/g, "")
+    .trim();
 
-    // JSON 파싱 시도 (코드 블록 제거 후)
-    const cleanedText = responseText
-      .replace(/```json\n?/g, "")
-      .replace(/```\n?/g, "")
-      .trim();
+  const storyData: StoryResponse = JSON.parse(cleanedText);
 
-    const storyData: StoryResponse = JSON.parse(cleanedText);
-
-    // 응답 유효성 검사
-    if (
-      !storyData.title ||
-      !Array.isArray(storyData.pages) ||
-      storyData.pages.length === 0
-    ) {
-      throw new Error("유효하지 않은 동화 데이터 형식");
-    }
-
-    return {
-      statusCode: 200,
-      headers,
-      body: JSON.stringify(storyData),
-    };
-  } catch (error) {
-    console.error("Story generation error:", error);
-
-    // API 키 오류 구분
-    const errorMessage =
-      error instanceof Error ? error.message : "알 수 없는 오류";
-    const isAuthError =
-      errorMessage.includes("401") || errorMessage.includes("authentication");
-
-    return {
-      statusCode: isAuthError ? 401 : 500,
-      headers,
-      body: JSON.stringify({
-        error: isAuthError
-          ? "Anthropic API 키가 유효하지 않습니다"
-          : "이야기 생성 중 오류가 발생했습니다",
-        detail: errorMessage,
-      }),
-    };
+  if (
+    !storyData.title ||
+    !Array.isArray(storyData.pages) ||
+    storyData.pages.length === 0
+  ) {
+    throw new Error("유효하지 않은 동화 데이터 형식");
   }
+
+  return {
+    statusCode: 200,
+    headers,
+    body: JSON.stringify(storyData),
+  };
 };

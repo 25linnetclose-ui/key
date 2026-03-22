@@ -16,7 +16,7 @@ export interface StoryChoice {
   text: string;
 }
 
-// Claude API에서 반환되는 동화 구조
+// 동화 구조
 export interface StoryData {
   title: string;
   pages: StoryPage[];
@@ -50,7 +50,6 @@ export interface ApiError {
 
 // 세션 스토리지에 저장되는 API 키
 export interface ApiKeys {
-  anthropicKey: string;
   geminiKey: string;
 }
 

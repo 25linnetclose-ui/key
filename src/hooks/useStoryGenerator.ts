@@ -1,9 +1,9 @@
-// 동화 생성 훅 — Claude API를 통해 동화 구조를 생성
+// 동화 생성 훅 — Gemini API를 통해 동화 구조를 생성
 import { useState, useCallback } from "react";
 import type { StoryData, GenerationStatus, ApiError } from "../types/api";
 
 interface UseStoryGeneratorReturn {
-  generate: (story: string, anthropicKey: string) => Promise<StoryData | null>;
+  generate: (story: string, geminiKey: string) => Promise<StoryData | null>;
   status: GenerationStatus;
   error: string | null;
   reset: () => void;
@@ -14,7 +14,7 @@ export function useStoryGenerator(): UseStoryGeneratorReturn {
   const [error, setError] = useState<string | null>(null);
 
   const generate = useCallback(
-    async (story: string, anthropicKey: string): Promise<StoryData | null> => {
+    async (story: string, geminiKey: string): Promise<StoryData | null> => {
       setStatus("generating-story");
       setError(null);
 
@@ -22,7 +22,7 @@ export function useStoryGenerator(): UseStoryGeneratorReturn {
         const response = await fetch("/api/generate-story", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ story, anthropicKey }),
+          body: JSON.stringify({ story, geminiKey }),
         });
 
         if (!response.ok) {

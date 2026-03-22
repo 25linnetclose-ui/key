@@ -9,10 +9,9 @@ import StoryList from "./components/StoryList";
 
 // API 키 존재 여부 확인 후 리다이렉트하는 가드 컴포넌트
 function RequireApiKeys({ children }: { children: ReactNode }) {
-  const anthropicKey = sessionStorage.getItem("anthropicKey");
   const geminiKey = sessionStorage.getItem("geminiKey");
 
-  if (!anthropicKey || !geminiKey) {
+  if (!geminiKey) {
     return <Navigate to="/setup" replace />;
   }
 

@@ -75,17 +75,13 @@ export default function StoryInput() {
   }, []);
 
   // API 키 확인
-  const getApiKeys = () => {
-    const anthropicKey = sessionStorage.getItem("anthropicKey");
-    const geminiKey = sessionStorage.getItem("geminiKey");
-    return { anthropicKey, geminiKey };
-  };
+  const getGeminiKey = () => sessionStorage.getItem("geminiKey");
 
   const handleGenerate = async () => {
     if (inputText.trim().length < 10) return;
 
-    const { anthropicKey, geminiKey } = getApiKeys();
-    if (!anthropicKey || !geminiKey) {
+    const geminiKey = getGeminiKey();
+    if (!geminiKey) {
       navigate("/setup");
       return;
     }
@@ -93,8 +89,8 @@ export default function StoryInput() {
     setIsLoading(true);
     setLoadingMessage("✨ 아이의 이야기로 동화를 쓰고 있어요...");
 
-    // 1단계: Claude로 동화 구조 생성
-    const storyData = await generateStory(inputText.trim(), anthropicKey);
+    // 1단계: Gemini로 동화 구조 생성
+    const storyData = await generateStory(inputText.trim(), geminiKey);
 
     if (!storyData) {
       setIsLoading(false);

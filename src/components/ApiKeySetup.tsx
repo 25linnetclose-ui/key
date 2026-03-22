@@ -1,14 +1,12 @@
 // API 키 입력 화면 (/setup)
-// Anthropic API 키와 Google Gemini API 키를 입력받아 sessionStorage에 저장
+// Google Gemini API 키를 입력받아 sessionStorage에 저장
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 
 export default function ApiKeySetup() {
   const navigate = useNavigate();
-  const [anthropicKey, setAnthropicKey] = useState("");
   const [geminiKey, setGeminiKey] = useState("");
-  const [showAnthropicKey, setShowAnthropicKey] = useState(false);
   const [showGeminiKey, setShowGeminiKey] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -16,17 +14,12 @@ export default function ApiKeySetup() {
     e.preventDefault();
     setError(null);
 
-    if (!anthropicKey.trim()) {
-      setError("Anthropic API 키를 입력해주세요");
-      return;
-    }
     if (!geminiKey.trim()) {
       setError("Google Gemini API 키를 입력해주세요");
       return;
     }
 
     // sessionStorage에 저장 (탭 닫으면 삭제됨)
-    sessionStorage.setItem("anthropicKey", anthropicKey.trim());
     sessionStorage.setItem("geminiKey", geminiKey.trim());
 
     navigate("/");
@@ -67,33 +60,6 @@ export default function ApiKeySetup() {
           </p>
 
           <form onSubmit={handleSubmit} className="space-y-5">
-            {/* Anthropic API Key */}
-            <div>
-              <label className="block text-sm font-semibold text-gray-600 mb-2">
-                Anthropic API Key
-                <span className="ml-1 text-xs font-normal text-gray-400">
-                  (claude.ai에서 발급)
-                </span>
-              </label>
-              <div className="relative">
-                <input
-                  type={showAnthropicKey ? "text" : "password"}
-                  value={anthropicKey}
-                  onChange={(e) => setAnthropicKey(e.target.value)}
-                  placeholder="sk-ant-..."
-                  className="w-full border-2 border-purple-200 rounded-2xl px-4 py-3 pr-12 text-sm focus:outline-none focus:border-purple-400 transition-colors"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowAnthropicKey(!showAnthropicKey)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 text-lg"
-                  aria-label={showAnthropicKey ? "키 숨기기" : "키 보기"}
-                >
-                  {showAnthropicKey ? "🙈" : "👁️"}
-                </button>
-              </div>
-            </div>
-
             {/* Gemini API Key */}
             <div>
               <label className="block text-sm font-semibold text-gray-600 mb-2">
