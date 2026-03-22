@@ -74,7 +74,7 @@ export const handler: Handler = async (event) => {
   try {
     const genAI = new GoogleGenerativeAI(geminiKey);
     const model = genAI.getGenerativeModel({
-      model: "gemini-2.0-flash-preview-image-generation",
+      model: "gemini-3-pro-image-preview",
     });
 
     const result = await model.generateContent({
